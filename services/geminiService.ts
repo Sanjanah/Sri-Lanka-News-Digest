@@ -30,10 +30,11 @@ const parseJsonResponse = (text: string): NewsData | null => {
 export const fetchNewsBreakdown = async (): Promise<FetchResult> => {
   const prompt = `
     Generate a thematic breakdown of all major news stories related to Sri Lanka in the past 24 hours.
+    All generated text, including titles, summaries, and contexts, must be written in UK English (e.g., use 'summarise' instead of 'summarize', 'colour' instead of 'color', 'normalisation' instead of 'normalization').
     Exclude any sports-related news or updates. The articles can be from both foreign and domestic media outlets.
-    When searching for information, give special consideration to news from reputable Sri Lankan sources like infolanka.com.
+    When searching for information, you MUST first check and give priority to news articles and related content published on https://www.newswire.lk, https://www.ft.lk, and https://www.dailymirror.lk.
 
-    First, provide a top-level "overview" as a short, bulleted list (3-5 points) summarizing the most critical developments.
+    First, provide a top-level "overview" as a short, bulleted list (3-5 points) summarising the most critical developments.
     
     Then, provide a "themes" section. For each story within a theme, provide a title, a concise one-sentence summary, and if it's a significant development, a brief context of what it follows up on. To establish this context, actively look for related articles from previous days or weeks (e.g., from archives) to create a clear timeline. The context must be grounded in verifiable prior events; do not speculate or create weak connections.
     Do not repeat stories across different themes. Group related stories under a clear, overarching theme title.

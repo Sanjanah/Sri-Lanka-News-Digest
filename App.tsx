@@ -3,7 +3,7 @@ import { fetchNewsBreakdown } from './services/geminiService';
 import { NewsTheme, GroundingChunk } from './types';
 import Loader from './components/Loader';
 import ErrorDisplay from './components/ErrorDisplay';
-import NewsCard from './components/NewsCard';
+import StoryListItem from './components/StoryListItem';
 import SourceList from './components/SourceList';
 import ThemeToggle from './components/ThemeToggle';
 
@@ -99,9 +99,9 @@ const App: React.FC = () => {
         {error && <ErrorDisplay message={error} />}
         
         {!loading && !error && (
-          <>
+          <div className="space-y-8">
             {overview.length > 0 && (
-              <section className="mb-10 bg-slate-100 dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+              <section className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
                  <h2 className="text-2xl sm:text-3xl font-semibold text-sky-600 dark:text-sky-300 pb-2 mb-4">
                     Overview
                   </h2>
@@ -113,22 +113,21 @@ const App: React.FC = () => {
               </section>
             )}
 
-            <div className="space-y-10">
-              {themes.map((theme, index) => (
-                <section key={index} aria-labelledby={`theme-title-${index}`}>
-                  <h2 id={`theme-title-${index}`} className="text-2xl sm:text-3xl font-semibold text-sky-600 dark:text-sky-300 border-b-2 border-slate-200 dark:border-slate-700 pb-2 mb-6">
-                    {theme.themeTitle}
-                  </h2>
-                  <div className="space-y-6">
-                    {theme.stories.map((story, storyIndex) => (
-                      <NewsCard key={storyIndex} story={story} />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+            {themes.map((theme, index) => (
+              <section key={index} aria-labelledby={`theme-title-${index}`} className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+                <h2 id={`theme-title-${index}`} className="text-2xl sm:text-3xl font-semibold text-sky-600 dark:text-sky-300 pb-2 mb-4">
+                  {theme.themeTitle}
+                </h2>
+                <ul className="space-y-4">
+                  {theme.stories.map((story, storyIndex) => (
+                    <StoryListItem key={storyIndex} story={story} />
+                  ))}
+                </ul>
+              </section>
+            ))}
+            
             <SourceList sources={sources} />
-          </>
+          </div>
         )}
       </main>
     </div>
