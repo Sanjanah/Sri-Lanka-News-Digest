@@ -1,32 +1,22 @@
+
 import React, { useState } from 'react';
 import { NewsStory } from '../types';
 
 interface StoryListItemProps {
   story: NewsStory;
+  isSaved: boolean;
+  onSaveToggle: (story: NewsStory) => void;
 }
 
-const StoryListItem: React.FC<StoryListItemProps> = ({ story }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const StoryListItem: React.FC<StoryListItemProps> = ({ story, isSaved, onSaveToggle }) => {
   const [shareFeedback, setShareFeedback] = useState<string>('');
-
-  const hasLongContext = story.context && story.context.length > 200;
 
   const handleShare = async () => {
     const shareData: { title: string; text: string; url?: string } = {
       title: story.title,
       text: story.summary,
+      url: story.url
     };
-
-    let sourceUrl = '';
-    try {
-      const url = new URL(window.location.href);
-      if (['http:', 'https:'].includes(url.protocol)) {
-        sourceUrl = window.location.href;
-        shareData.url = sourceUrl;
-      }
-    } catch (_) {
-      // Proceed without a URL if window.location.href is invalid.
-    }
 
     if (navigator.share) {
       try {
@@ -38,10 +28,7 @@ const StoryListItem: React.FC<StoryListItemProps> = ({ story }) => {
       }
     } else {
       try {
-        let clipboardText = `${story.title}\n\n${story.summary}`;
-        if (sourceUrl) {
-          clipboardText += `\n\nSource: ${sourceUrl}`;
-        }
+        let clipboardText = `${story.title}\n\n${story.summary}\n\nSource: ${story.url}`;
         await navigator.clipboard.writeText(clipboardText);
         setShareFeedback('Copied!');
         setTimeout(() => setShareFeedback(''), 2000);
@@ -52,44 +39,71 @@ const StoryListItem: React.FC<StoryListItemProps> = ({ story }) => {
       }
     }
   };
+  
+  const buttonClass = "p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-sky-500 transition-colors duration-200";
 
   return (
-    <li className="p-4 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-shadow hover:shadow-md">
+    <article>
       <div className="flex justify-between items-start space-x-4">
         <div className="flex-grow">
           <h4 className="font-bold text-lg text-slate-800 dark:text-slate-100">{story.title}</h4>
-          <p className="text-slate-600 dark:text-slate-300 mt-1 text-base">{story.summary}</p>
+          <p className="text-slate-600 dark:text-slate-300 mt-1 text-base">
+            {story.summary}
+          </p>
           {story.context && (
-            <div className="mt-2 text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md border-l-4 border-emerald-500">
+            <div className="mt-2 text-base text-slate-600 dark:text-slate-400">
               <p>
                 <span className="font-semibold">Context:</span>{' '}
-                {hasLongContext && !isExpanded ? `${story.context.substring(0, 200)}...` : story.context}
+                {story.context}
               </p>
-              {hasLongContext && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-sky-600 dark:text-sky-400 hover:underline mt-2 font-semibold text-sm"
-                  aria-expanded={isExpanded}
-                >
-                  {isExpanded ? 'Read Less' : 'Read More'}
-                </button>
-              )}
+            </div>
+          )}
+          {story.url && (
+            <div className="mt-3">
+              <a
+                href={story.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold text-base group"
+                aria-label={`Read full article about ${story.title}`}
+              >
+                <span>Read Full Article</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
             </div>
           )}
         </div>
-        <div className="flex-shrink-0 relative">
-          {shareFeedback && (
+        <div className="flex-shrink-0 relative flex items-center space-x-1">
+           {shareFeedback && (
             <span 
-              className="absolute -top-6 right-0 text-xs bg-slate-600 text-white px-2 py-1 rounded-md transition-opacity duration-300"
+              className="absolute -top-8 right-0 text-xs bg-slate-600 text-white px-2 py-1 rounded-md transition-opacity duration-300 w-max"
               role="status"
             >
               {shareFeedback}
             </span>
           )}
           <button
+            onClick={() => onSaveToggle(story)}
+            title={isSaved ? "Unsave story" : "Save for later"}
+            className={buttonClass}
+            aria-label={isSaved ? "Unsave story" : "Save for later"}
+          >
+            {isSaved ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+            )}
+          </button>
+          <button
             onClick={handleShare}
             title="Share story"
-            className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-sky-500 transition-colors duration-200"
+            className={buttonClass}
             aria-label="Share story"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -98,7 +112,7 @@ const StoryListItem: React.FC<StoryListItemProps> = ({ story }) => {
           </button>
         </div>
       </div>
-    </li>
+    </article>
   );
 };
 

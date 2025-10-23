@@ -2,6 +2,7 @@ export interface NewsStory {
   title: string;
   summary: string;
   context: string;
+  url: string;
 }
 
 export interface NewsTheme {
@@ -12,16 +13,4 @@ export interface NewsTheme {
 export interface NewsData {
   overview: string[];
   themes: NewsTheme[];
-}
-
-export interface GroundingChunk {
-  web: {
-    uri: string;
-    title: string;
-  };
-}
-
-export interface FetchResult {
-  newsData: NewsData | null;
-  sources: GroundingChunk[];
 }
