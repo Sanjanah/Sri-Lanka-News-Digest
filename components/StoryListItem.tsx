@@ -8,6 +8,22 @@ interface StoryListItemProps {
   onSaveToggle: (story: NewsStory) => void;
 }
 
+// Helper to get a display-friendly source from a URL
+const getSourceFromUrl = (url: string): string => {
+  if (!url) return '';
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname.replace(/^www\./, '');
+  } catch (e) {
+    console.warn(`Could not parse URL for source: ${url}`);
+    // Fallback for invalid URLs, try to extract domain with a simple regex
+    const matches = url.match(/^https?:\/\/([^/?#]+)(?:[/?#]|$)/i);
+    const domain = matches && matches[1];
+    return domain ? domain.replace(/^www\./, '') : '';
+  }
+};
+
+
 const StoryListItem: React.FC<StoryListItemProps> = ({ story, isSaved, onSaveToggle }) => {
   const [shareFeedback, setShareFeedback] = useState<string>('');
 
@@ -60,18 +76,9 @@ const StoryListItem: React.FC<StoryListItemProps> = ({ story, isSaved, onSaveTog
           )}
           {story.url && (
             <div className="mt-3">
-              <a
-                href={story.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold text-base group"
-                aria-label={`Read full article about ${story.title}`}
-              >
-                <span>Read Full Article</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </a>
+              <p className="text-sm text-slate-500 dark:text-slate-400 italic">
+                Source: {getSourceFromUrl(story.url)}
+              </p>
             </div>
           )}
         </div>

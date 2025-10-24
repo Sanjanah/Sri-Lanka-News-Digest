@@ -29,6 +29,26 @@ const parseJsonResponse = (text: string): NewsData | null => {
   return null;
 };
 
+// Helper function to calculate Jaccard similarity between two strings based on word overlap.
+const getSimilarity = (str1: string, str2: string): number => {
+    if (!str1 || !str2) return 0;
+    // Pre-process strings: lowercase, remove punctuation, split into words, remove empty strings.
+    const words1 = new Set(str1.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean));
+    const words2 = new Set(str2.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean));
+
+    const intersection = new Set<string>();
+    for (const word of words1) {
+        if (words2.has(word)) {
+            intersection.add(word);
+        }
+    }
+
+    const unionSize = words1.size + words2.size - intersection.size;
+    if (unionSize === 0) return 0;
+
+    return intersection.size / unionSize;
+};
+
 // FIX: Update function to return news data and grounding sources.
 export const fetchNewsBreakdown = async (): Promise<NewsData | null> => {
   const prompt = `
@@ -104,6 +124,37 @@ export const fetchNewsBreakdown = async (): Promise<NewsData | null> => {
     });
 
     const newsData = parseJsonResponse(response.text);
+    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+
+    // FIX: If grounding data is available, use it to find the most accurate URL for each story.
+    if (newsData && groundingChunks) {
+      const sources = groundingChunks
+        .filter(chunk => chunk.web && chunk.web.uri && chunk.web.title)
+        .map(chunk => ({
+          title: chunk.web.title!,
+          url: chunk.web.uri!,
+        }));
+
+      if (sources.length > 0) {
+        newsData.themes.forEach(theme => {
+          theme.stories.forEach(story => {
+            let bestMatch = { score: 0, url: story.url };
+            
+            sources.forEach(source => {
+              const score = getSimilarity(story.title, source.title);
+              if (score > bestMatch.score) {
+                bestMatch = { score, url: source.url };
+              }
+            });
+
+            // Update the story URL if a strong match (>20% title word overlap) is found in the grounding sources.
+            if (bestMatch.score > 0.2) {
+              story.url = bestMatch.url;
+            }
+          });
+        });
+      }
+    }
 
     if (newsData) {
       return newsData;
@@ -112,6 +163,10 @@ export const fetchNewsBreakdown = async (): Promise<NewsData | null> => {
     return null;
   } catch (error) {
     console.error("Error fetching news from Gemini API:", error);
+    // Re-throw with a specific prefix to identify API errors upstream.
+    if (error instanceof Error) {
+        throw new Error(`API_ERROR: ${error.message}`);
+    }
     throw new Error("Failed to fetch news breakdown.");
   }
 };

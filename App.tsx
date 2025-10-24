@@ -128,7 +128,11 @@ const App: React.FC = () => {
       }
     } catch (err) {
       setLoading(false);
-      setError(err instanceof Error ? err.message : "An unknown error occurred.");
+      if (err instanceof Error && err.message.startsWith('API_ERROR:')) {
+        setError("Could not retrieve news from the source. The service may be temporarily unavailable. Please try refreshing again shortly.");
+      } else {
+        setError(err instanceof Error ? err.message : "An unknown error occurred.");
+      }
     }
   }, []);
 
